@@ -20,6 +20,11 @@ func (l *Link) IsFootnote() bool {
 	return strings.HasPrefix(l.ID, "^")
 }
 
+func (l *Link) IsReference() bool {
+	match, _ := regexp.MatchString(`^\D+$`, l.ID)
+	return match && !l.IsFootnote()
+}
+
 // MarkdownConverter converts inline links to reference links in markdown files
 type MarkdownConverter struct {
 	FileName string
@@ -42,7 +47,7 @@ func (c *MarkdownConverter) extractMarkdownLinksFromBuffer(content []byte) {
 		c.addLink(string(match[1]), string(match[2]), "")
 	}
 
-	refLinkRegex := regexp.MustCompile(`\[(.*?)\]\[(.*?)\]`)
+	refLinkRegex := regexp.MustCompile(`\[([^\]]*)?\]\[(\w+)\]`)
 	matches = refLinkRegex.FindAllSubmatch(content, -1)
 
 	for _, match := range matches {
@@ -68,6 +73,22 @@ func (c *MarkdownConverter) extractReferenceLinksFromBuffer(content []byte) {
 	}
 }
 func (c *MarkdownConverter) addLink(name string, url string, ID string) {
+	if url != "" {
+		for _, link := range c.Links {
+			if link.URL == url {
+				return
+			}
+		}
+	}
+
+	if ID != "" {
+		for _, link := range c.Links {
+			if link.ID == ID {
+				return
+			}
+		}
+	}
+
 	link := Link{Name: name, URL: url, ID: ID}
 	if !link.IsFootnote() {
 		link.ReferenceNo = len(c.Links) + 1
@@ -83,15 +104,26 @@ func (c *MarkdownConverter) extractLinks() {
 	c.extractMarkdownLinksFromBuffer(content)
 }
 
+func removeLineContainingString(buffer []byte, str string) []byte {
+	lines := bytes.Split(buffer, []byte("\n"))
+	var newLines [][]byte
+	for _, line := range lines {
+		if !bytes.Contains(line, []byte(str)) {
+			newLines = append(newLines, line)
+		}
+	}
+	return bytes.Join(newLines, []byte("\n"))
+}
+
 func (c *MarkdownConverter) updateBuffer(buffer []byte) []byte {
 	c.extractMarkdownLinksFromBuffer(buffer)
+
 	for _, link := range c.Links {
-		if link.IsFootnote() {
-			footnoteRef := "\n" + link.AsReference()
-			buffer = bytes.ReplaceAll(buffer, []byte(footnoteRef), []byte(""))
+		if link.IsFootnote() || link.IsReference() {
+			buffer = removeLineContainingString(buffer, link.AsReference())
 		} else {
-			linkRef := fmt.Sprintf("[%s][%d]", link.Name, link.ReferenceNo)
-			linkRegex := regexp.MustCompile(fmt.Sprintf(`\[%s\]\(.*?\)`, link.Name))
+			linkRef := fmt.Sprintf("[%d]", link.ReferenceNo)
+			linkRegex := regexp.MustCompile(fmt.Sprintf(`\(%s\)`, link.URL))
 			buffer = linkRegex.ReplaceAll(buffer, []byte(linkRef))
 		}
 	}
@@ -104,16 +136,27 @@ func (c *MarkdownConverter) updateBuffer(buffer []byte) []byte {
 	return buffer
 }
 
-func (c *MarkdownConverter) updateFile() {
-	content, err := os.ReadFile(c.FileName)
-	if err != nil {
-		panic(err)
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: go run main.go <filename>")
+		return
 	}
-	updatedContent := c.updateBuffer(content)
-	err = os.WriteFile(c.FileName, updatedContent, 0644)
+
+	filename := os.Args[1]
+	converter := MarkdownConverter{FileName: filename}
+	content, _ := os.ReadFile(filename)
+	converter.extractLinksFromReferences(content)
+	content = converter.clearReferences(content)
+	newContent := converter.updateBuffer(content)
+
+	err := os.WriteFile(filename, newContent, 0644)
+
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error updating file: %v\n", err)
+		return
 	}
+
+	fmt.Printf("File %s updated successfully!\n", filename)
 }
 
 func (c *MarkdownConverter) referencesList() []string {
@@ -132,4 +175,28 @@ func (l *Link) AsReference() string {
 		ref = fmt.Sprint(l.ReferenceNo)
 	}
 	return fmt.Sprintf("[%s]: %s", ref, l.URL)
+}
+
+func (l *Link) AsMarkdownLink() string {
+	if l.URL == "" {
+		return l.Name
+	}
+	if l.Name == "" {
+		return fmt.Sprintf("<%s>", l.URL)
+	}
+	return fmt.Sprintf("[%s](%s)", l.Name, l.URL)
+}
+
+func (c *MarkdownConverter) extractLinksFromReferences(content []byte) {
+	refLinkRegex := regexp.MustCompile(`\[(.*?)\]:\s(.+)`)
+	matches := refLinkRegex.FindAllSubmatch(content, -1)
+
+	for _, match := range matches {
+		c.addLink(string(""), string(match[2]), string(match[1]))
+	}
+}
+
+func (c *MarkdownConverter) clearReferences(content []byte) []byte {
+	refLinkRegex := regexp.MustCompile(`\[(.*?)\]:\s(.+)\n`)
+	return refLinkRegex.ReplaceAll(content, []byte(""))
 }

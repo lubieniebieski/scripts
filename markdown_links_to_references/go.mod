@@ -1,3 +1,3 @@
-module github.com/lubieniebieski/advent-of-code/2022-golang
+module github.com/lubieniebieski/markdown_links_to_references
 
 go 1.20

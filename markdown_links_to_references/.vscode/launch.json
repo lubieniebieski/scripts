@@ -5,11 +5,14 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run",
+      "name": "Debug test.md",
       "type": "go",
       "request": "launch",
-      "mode": "auto",
-      "program": "${fileDirname}"
+      "mode": "debug",
+      "program": "${workspaceFolder}/main.go",
+      "args": [
+        "test.md"
+      ]
     }
   ]
 }

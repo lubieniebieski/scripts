@@ -1,5 +1,5 @@
 {
-  "name": "advent-of-code",
+  "name": "markdown_links_to_references",
   "dockerFile": "Dockerfile",
   "appPort": [
     "8000:8000"

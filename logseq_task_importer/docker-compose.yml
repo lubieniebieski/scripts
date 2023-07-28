@@ -1,0 +1,9 @@
+version: "3"
+services:
+  importer:
+    build: .
+    stdin_open: true # Keep STDIN open even if not attached
+    tty: true # Allocate a pseudo-tty
+    image: importer
+    volumes:
+      - ./:/script

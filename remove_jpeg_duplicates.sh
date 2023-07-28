@@ -70,3 +70,35 @@ fi
 # If multiple parameters (not counting -a), show usage help and exit
 if (($isSetCount > 1)); then
     usage
+fi
+
+#Verify directory
+if [ ! -d "${arg}" ]; then
+  echo "$arg is not a path to a directory." >&2
+  usage
+fi
+
+#Now set it as a basedir
+BASEDIR=$arg
+WASTEDIR="$BASEDIR/duplicates/"
+if (( $isSetM==1 )); then
+    mkdir $WASTEDIR
+fi
+
+find "${BASEDIR}" -name '*.RAF' | while read LINE; do
+  prefix=${LINE%.RAF}
+  if [ -e "$prefix.JPG" ]; then
+      let counter="$counter+1"
+      if (( $isSetE==1 )); then
+          echo "$prefix.JPG"
+      fi
+      if (( $isSetM==1 )); then
+          mv $prefix.JPG $WASTEDIR
+      fi
+      if (( $isSetD==1 )); then
+          rm "${prefix}.JPG"
+      fi
+  fi
+
+done
+echo "$counter files found."

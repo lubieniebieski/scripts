@@ -1,0 +1,41 @@
+{
+  "name": "advent-of-code",
+  "dockerFile": "Dockerfile",
+  "appPort": [
+    "8000:8000"
+  ],
+  "extensions": [
+    "ms-vscode.go",
+    "golang.Go",
+    "IBM.output-colorizer", // Colorize your output/test logs
+    "vscode-icons-team.vscode-icons", // Better file extension icons
+    "dbankier.vscode-quick-select",
+  ],
+  "settings": {
+    "go.useLanguageServer": true,
+    "[go]": {
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+      },
+    },
+    "[go.mod]": {
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+      }
+    },
+    "gopls": {
+      "build.buildFlags": [
+        "-tags",
+        ""
+      ],
+      "usePlaceholders": false,
+      "staticcheck": true,
+    },
+    "go.testFlags": [
+      "-v",
+    ],
+    "go.testTimeout": "10s",
+    "go.coverOnSingleTestFile": true,
+    "go.coverOnTestPackage": true
+  }
+}

@@ -6,4 +6,4 @@ Here you can find a collection of my scripts. They are not perfect, but they wor
 
 - [`markdown_inline_links_to_references_converter`][1] - convert inline links in markdown files to references
 
-[1]: markdown_inline_links_to_references_converter/README.md
+[1]: markdown_inline_links_to_references_converter/

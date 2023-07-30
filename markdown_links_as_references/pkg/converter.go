@@ -1,4 +1,4 @@
-package main
+package converter
 
 import (
 	"bytes"
@@ -9,26 +9,12 @@ import (
 )
 
 // Link represents a link along with its reference number
-type Link struct {
-	Name        string
-	URL         string
-	ReferenceNo int
-	ID          string
-}
-
-func (l *Link) IsFootnote() bool {
-	return strings.HasPrefix(l.ID, "^")
-}
-
-func (l *Link) IsReference() bool {
-	match, _ := regexp.MatchString(`^\D+$`, l.ID)
-	return match && !l.IsFootnote()
-}
 
 // MarkdownConverter converts inline links to reference links in markdown files
 type MarkdownConverter struct {
-	FileName string
-	Links    []Link
+	originalContent []byte
+	modifiedContent []byte
+	Links           []Link
 }
 
 func (c *MarkdownConverter) extractFootnotesFromBuffer(content []byte) {
@@ -72,6 +58,7 @@ func (c *MarkdownConverter) extractReferenceLinksFromBuffer(content []byte) {
 		}
 	}
 }
+
 func (c *MarkdownConverter) addLink(name string, url string, ID string) {
 	if url != "" {
 		for _, link := range c.Links {
@@ -96,14 +83,6 @@ func (c *MarkdownConverter) addLink(name string, url string, ID string) {
 	c.Links = append(c.Links, link)
 }
 
-func (c *MarkdownConverter) extractLinks() {
-	content, err := os.ReadFile(c.FileName)
-	if err != nil {
-		panic(err)
-	}
-	c.extractMarkdownLinksFromBuffer(content)
-}
-
 func removeLineContainingString(buffer []byte, str string) []byte {
 	lines := bytes.Split(buffer, []byte("\n"))
 	var newLines [][]byte
@@ -115,48 +94,25 @@ func removeLineContainingString(buffer []byte, str string) []byte {
 	return bytes.Join(newLines, []byte("\n"))
 }
 
-func (c *MarkdownConverter) updateBuffer(buffer []byte) []byte {
-	c.extractMarkdownLinksFromBuffer(buffer)
-
+func (c *MarkdownConverter) cleanup() {
 	for _, link := range c.Links {
 		if link.IsFootnote() || link.IsReference() {
-			buffer = removeLineContainingString(buffer, link.AsReference())
+			c.modifiedContent = removeLineContainingString(c.modifiedContent, link.AsReference())
 		} else {
 			linkRef := fmt.Sprintf("[%d]", link.ReferenceNo)
 			linkRegex := regexp.MustCompile(fmt.Sprintf(`\(%s\)`, link.URL))
-			buffer = linkRegex.ReplaceAll(buffer, []byte(linkRef))
+			c.modifiedContent = linkRegex.ReplaceAll(c.modifiedContent, []byte(linkRef))
 		}
 	}
-
-	if len(c.referencesList()) == 0 {
-		return buffer
-	}
-	buffer = append(buffer, []byte("\n\n")...)
-	buffer = append(buffer, []byte(strings.Join(c.referencesList(), "\n"))...)
-	return buffer
 }
 
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run main.go <filename>")
+func (c *MarkdownConverter) addNewReferencesList() {
+
+	if len(c.referencesList()) == 0 {
 		return
 	}
-
-	filename := os.Args[1]
-	converter := MarkdownConverter{FileName: filename}
-	content, _ := os.ReadFile(filename)
-	converter.extractLinksFromReferences(content)
-	content = converter.clearReferences(content)
-	newContent := converter.updateBuffer(content)
-
-	err := os.WriteFile(filename, newContent, 0644)
-
-	if err != nil {
-		fmt.Printf("Error updating file: %v\n", err)
-		return
-	}
-
-	fmt.Printf("File %s updated successfully!\n", filename)
+	c.modifiedContent = append(c.modifiedContent, []byte("\n\n")...)
+	c.modifiedContent = append(c.modifiedContent, []byte(strings.Join(c.referencesList(), "\n"))...)
 }
 
 func (c *MarkdownConverter) referencesList() []string {
@@ -167,36 +123,55 @@ func (c *MarkdownConverter) referencesList() []string {
 	return result
 }
 
-func (l *Link) AsReference() string {
-	var ref string
-	if l.ID != "" {
-		ref = l.ID
-	} else {
-		ref = fmt.Sprint(l.ReferenceNo)
-	}
-	return fmt.Sprintf("[%s]: %s", ref, l.URL)
-}
-
-func (l *Link) AsMarkdownLink() string {
-	if l.URL == "" {
-		return l.Name
-	}
-	if l.Name == "" {
-		return fmt.Sprintf("<%s>", l.URL)
-	}
-	return fmt.Sprintf("[%s](%s)", l.Name, l.URL)
-}
-
-func (c *MarkdownConverter) extractLinksFromReferences(content []byte) {
+func (c *MarkdownConverter) extractLinksFromReferences() {
 	refLinkRegex := regexp.MustCompile(`\[(.*?)\]:\s(.+)`)
-	matches := refLinkRegex.FindAllSubmatch(content, -1)
+	matches := refLinkRegex.FindAllSubmatch(c.originalContent, -1)
 
 	for _, match := range matches {
 		c.addLink(string(""), string(match[2]), string(match[1]))
 	}
 }
 
-func (c *MarkdownConverter) clearReferences(content []byte) []byte {
+func (c *MarkdownConverter) clearReferences() {
 	refLinkRegex := regexp.MustCompile(`\[(.*?)\]:\s(.+)\n`)
-	return refLinkRegex.ReplaceAll(content, []byte(""))
+	c.modifiedContent = refLinkRegex.ReplaceAll(c.originalContent, []byte(""))
+}
+
+func (c *MarkdownConverter) RunOnContent(content []byte) {
+	c.originalContent = content
+	c.extractLinksFromReferences()
+	c.clearReferences()
+	c.extractMarkdownLinksFromBuffer(c.modifiedContent)
+	c.cleanup()
+	c.addNewReferencesList()
+}
+
+func (c *MarkdownConverter) Run() {
+	c.extractLinksFromReferences()
+	c.clearReferences()
+	c.extractMarkdownLinksFromBuffer(c.modifiedContent)
+	c.cleanup()
+	c.addNewReferencesList()
+}
+
+func RunOnContent(content []byte) (modifiedContent []byte) {
+	converter := MarkdownConverter{originalContent: content}
+	converter.Run()
+	return converter.modifiedContent
+
+}
+
+func Run(filename string) {
+	content, _ := os.ReadFile(filename)
+	newContent := RunOnContent(content)
+
+	err := os.WriteFile(filename, newContent, 0644)
+
+	if err != nil {
+		fmt.Printf("Error updating file: %v\n", err)
+		return
+	}
+
+	fmt.Printf("File %s updated successfully!\n", filename)
+
 }

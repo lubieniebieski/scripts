@@ -4,25 +4,29 @@
   "appPort": [
     "8000:8000"
   ],
-  "extensions": [
-	"ms-vscode.go",
-	"golang.Go",
-	"IBM.output-colorizer",
-	"vscode-icons-team.vscode-icons",
-	"dbankier.vscode-quick-select",
-	"esbenp.prettier-vscode",
-	"GitHub.copilot"
-],
-  "settings": {
-    "go.useLanguageServer": true,
-    "[go]": {
-      "editor.codeActionsOnSave": {
-        "source.organizeImports": true
-      },
-    },
-    "[go.mod]": {
-      "editor.codeActionsOnSave": {
-        "source.organizeImports": true
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.go",
+        "golang.Go",
+        "IBM.output-colorizer",
+        "vscode-icons-team.vscode-icons",
+        "dbankier.vscode-quick-select",
+        "esbenp.prettier-vscode",
+        "GitHub.copilot"
+      ],
+      "settings": {
+        "go.useLanguageServer": true,
+        "[go]": {
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+          }
+        },
+        "[go.mod]": {
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+          }
+        }
       }
     },
     "gopls": {
@@ -31,10 +35,10 @@
         ""
       ],
       "usePlaceholders": false,
-      "staticcheck": true,
+      "staticcheck": true
     },
     "go.testFlags": [
-      "-v",
+      "-v"
     ],
     "go.testTimeout": "10s",
     "go.coverOnSingleTestFile": true,

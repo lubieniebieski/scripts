@@ -1,7 +1,0 @@
-version: "3"
-services:
-  convert:
-    build: .
-    stdin_open: true # Keep STDIN open even if not attached
-    tty: true # Allocate a pseudo-tty
-    image: markdown_links_to_references

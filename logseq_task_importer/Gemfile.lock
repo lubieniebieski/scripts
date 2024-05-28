@@ -14,8 +14,9 @@ GEM
     rainbow (3.1.1)
     regexp_parser (2.6.2)
     rexml (3.2.5)
-    rss (0.2.8)
-    rubocop (1.44.1)
+    rss (0.3.0)
+      rexml
+    rubocop (1.45.1)
       json (~> 2.3)
       parallel (~> 1.10)
       parser (>= 3.2.0.0)
@@ -39,4 +40,4 @@ DEPENDENCIES
   rubocop
 
 BUNDLED WITH
-   2.1.4
+   2.5.10

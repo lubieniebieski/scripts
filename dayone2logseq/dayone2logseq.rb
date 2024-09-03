@@ -12,7 +12,7 @@ end
 
 journal = DayOneJournal.load_from_file(filename)
 
-logseq_journal_path = ""
+logseq_journal_path = "/Users/adamo/Library/Mobile Documents/iCloud~com~logseq~logseq/Documents/heart/journals"
 # journal.save_to_logseq(logseq_journal_path, 30)
 journal.clean_journal_entries_from_logseq(logseq_journal_path)
 

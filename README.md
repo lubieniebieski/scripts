@@ -8,8 +8,10 @@ Here you can find a collection of my scripts. They are not perfect, but they wor
 - [`logseq_task_importer`][2] -- Import Slack saved items to Logseq.
 - [`lightroom_corrupted_file_fixer`][3] -- Restore backup versions of corrupted photos in Lightroom.
 - [`remove_jpeg_duplicates`][4] -- Remove JPEG duplicates stored alongside RAWs.
+- [`obsidian-journal-cleaner][5] -- Script that organizes Obsidian daily journal files by date, adds YAML frontmatter, and moves them into a structured directory hierarchy.
 
 [1]: https://github.com/lubieniebieski/markdown-tools
 [2]: /logseq_task_importer/
 [3]: /lightroom_corrupted_file_fixer.rb
 [4]: /remove_jpeg_duplicates.sh
+[5]: /obsidian-journal-cleaner/

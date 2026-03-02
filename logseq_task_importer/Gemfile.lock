@@ -31,7 +31,7 @@ GEM
     regexp_parser (2.10.0)
     reline (0.6.3)
       io-console (~> 0.5)
-    rexml (3.4.0)
+    rexml (3.4.4)
     rss (0.3.2)
       rexml
     rubocop (1.85.0)
